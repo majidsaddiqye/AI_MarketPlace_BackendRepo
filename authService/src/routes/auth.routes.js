@@ -3,7 +3,7 @@ const router = express.Router();
 const {
   registerController,
   loginController,
-  getUserController,
+  getUserController, logOutController 
 } = require("../controllers/auth.controller");
 const {
   registerUserValidation,
@@ -16,5 +16,6 @@ const { authMiddleware } = require("../middlewares/auth.middleware");
 router.post("/register", registerUserValidation, registerController);
 router.post("/login", loginUserValidation, loginController);
 router.get("/me", authMiddleware, getUserController);
+router.get('/logout',logOutController )
 
 module.exports = router;
