@@ -4,15 +4,14 @@ const jwt = require("jsonwebtoken");
 
 // Register Controller
 const registerController = async (req, res) => {
-
   try {
     const {
-    username,
-    email,
-    password,
-    fullName: { firstName, lastName },
-  } = req.body;
-  
+      username,
+      email,
+      password,
+      fullName: { firstName, lastName },
+    } = req.body;
+
     // Check All Field are Required
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).send({ message: "All fields are required" });
@@ -79,6 +78,76 @@ const registerController = async (req, res) => {
   }
 };
 
+// Login Controller
+const loginController = async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    // Check All Field are Required
+    if ((!email && !username) || !password) {
+      return res
+        .status(400)
+        .send({ message: "Email or Username and Password are required" });
+    }
+
+    //Check User Exist
+    const user = await userModel
+      .findOne({ $or: [{ email }, { username }] })
+      .select("+password");
+
+    if (!user) {
+      return res.status(401).send({ message: "Invalid email or password" });
+    }
+
+    // Check password into DB
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).send({ message: "Invalid password" });
+    }
+
+    //Create jwt Token
+    const token = jwt.sign(
+      {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000, //1 Day
+    });
+
+    //Return Response
+    return res.status(201).send({
+      message: "User Login successfully",
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        addresses: user.addresses,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error registering user",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   registerController,
+  loginController,
 };

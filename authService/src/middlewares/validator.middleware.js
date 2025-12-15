@@ -40,7 +40,31 @@ const registerUserValidation = [
   respondWithValidationError,
 ];
 
+// Create loginUserValidation
+const loginUserValidation = [
+  body("email").optional().isEmail().withMessage("Invalid Email Address"),
+
+  body("username")
+    .optional()
+    .isString()
+    .withMessage("Username must be provided in the String"),
+
+  body("password")
+    .isLength({ min: 6 })
+    .withMessage("Password must be atleast 6 character Long"),
+
+  (req, res, next) => {
+    if (!req.body.email && !req.body.username) {
+      return res
+        .status(400)
+        .json({ errors: "Enter Email or userName is Required" });
+    }
+    respondWithValidationError(req, res, next);
+  },
+];
+
 //Exports Validations
 module.exports = {
   registerUserValidation,
+  loginUserValidation,
 };
