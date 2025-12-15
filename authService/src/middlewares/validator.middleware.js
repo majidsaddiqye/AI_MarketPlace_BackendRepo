@@ -63,8 +63,27 @@ const loginUserValidation = [
   },
 ];
 
+//create addUserAdressValidation
+const addUserAdressValidation = [
+  body("street").isString().notEmpty().withMessage("Street is required"),
+
+  body("city").isString().notEmpty().withMessage("City is required"),
+
+  body("state").isString().notEmpty().withMessage("State is required"),
+
+  body("zip").isString().notEmpty().withMessage("Zip is required"),
+
+  body("country").isString().notEmpty().withMessage("Country is required"),
+
+  body("isDefault")
+    .optional()
+    .isBoolean()
+    .withMessage("isDefault must be boolean"),
+];
+
 //Exports Validations
 module.exports = {
   registerUserValidation,
   loginUserValidation,
+  addUserAdressValidation,
 };

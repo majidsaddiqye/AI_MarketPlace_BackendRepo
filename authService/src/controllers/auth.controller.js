@@ -196,10 +196,45 @@ const getUserAddresses = async (req, res) => {
   });
 };
 
+//addUserAddress Controller
+const addUserAddress = async (req, res) => {
+  // user id get to authMiddleware
+  const id = req.user.id;
+
+  const { street, city, state, zip, country, isDefault } = req.body;
+
+  // update Adresses
+  const user = await User.findOneAndUpdate(
+    { _id: id },
+    {
+      $push: {
+        addresses: { street, city, state, zip, country, isDefault },
+      },
+    },
+    { new: true }
+  );
+
+  // check if user not Exist
+  if (!user) {
+    return res.status(404).json({
+      message: "User not Found",
+    });
+  }
+
+  //Return response
+  return res.status(200).json({
+    message: "Addresses Added Successfully",
+    addresses: user.addresses[user.addresses.length - 1],
+  });
+};
+
+
+
 module.exports = {
   registerController,
   loginController,
   getUserController,
   logOutController,
   getUserAddresses,
+  addUserAddress,
 };
