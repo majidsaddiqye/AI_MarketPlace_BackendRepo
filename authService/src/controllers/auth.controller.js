@@ -147,7 +147,16 @@ const loginController = async (req, res) => {
   }
 };
 
+//getUser Controller
+const getUserController = async (req, res) => {
+  return res.status(200).json({
+    message: "Current User Fetched Successfully.",
+    user: req.user,
+  });
+};
+
 module.exports = {
   registerController,
   loginController,
+  getUserController,
 };
