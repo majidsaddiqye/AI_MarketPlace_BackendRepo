@@ -174,9 +174,32 @@ const logOutController = async (req, res) => {
   });
 };
 
+//getUserAddresses controller
+const getUserAddresses = async (req, res) => {
+  // user id get to authMiddleware
+  const id = req.user.id;
+
+  //Find user By Id in DB
+  const user = await userModel.findById(id).select("addresses");
+
+  //If User not Exist in DB
+  if (!user) {
+    return res.status(404).json({
+      message: "User not Found",
+    });
+  }
+
+  //Retrun Response
+  return res.status(200).json({
+    message: "User addressed fetched successfully",
+    addresses: user.addresses,
+  });
+};
+
 module.exports = {
   registerController,
   loginController,
   getUserController,
   logOutController,
+  getUserAddresses,
 };
