@@ -37,6 +37,11 @@ const registerUserValidation = [
     .notEmpty()
     .withMessage("lastName must be required"),
 
+  body("role")
+    .optional()
+    .isIn(["user", "seller"])
+    .withMessage("Role must be Either user or seller"),
+
   respondWithValidationError,
 ];
 

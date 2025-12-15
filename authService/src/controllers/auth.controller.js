@@ -11,6 +11,7 @@ const registerController = async (req, res) => {
       email,
       password,
       fullName: { firstName, lastName },
+      role,
     } = req.body;
 
     // Check All Field are Required
@@ -36,6 +37,7 @@ const registerController = async (req, res) => {
       email,
       password: hashPassword,
       fullName: { firstName, lastName },
+      role: role || "user",
     });
 
     //Create jwt Token
@@ -228,7 +230,60 @@ const addUserAddress = async (req, res) => {
   });
 };
 
+// deleteuserAddress Controller
+const deleteuserAddress = async (req, res) => {
+  // user id get to authMiddleware
+  const id = req.user.id;
 
+  //addressId get to middleware
+  const { addressId } = req.params;
+
+  // Checks whether the given addressId exists for the specified user
+  const isAddressIdExist = await userModel.findOne({
+    _id: id,
+    "addresses._id": addressId,
+  });
+  if (!isAddressIdExist) {
+    return res.status(404).json({
+      message: "Address not Found",
+    });
+  }
+
+  // Removes the specific address from the user's addresses array
+  const user = await userModel.findOneAndUpdate(
+    { _id: id },
+    {
+      $pull: {
+        addresses: { _id: addressId },
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  if (!user) {
+    return res.status(404).json({
+      message: "User not Found",
+    });
+  }
+
+  // Verifies that the address has been successfully deleted
+  const addressExist = user.addresses.some(
+    (addr) => addr._id.toString() === addressId
+  );
+  if (addressExist) {
+    return res.status(500).json({
+      message: "Failed to Delete Addresss",
+    });
+  }
+
+  //Retrun Response
+  return res.status(200).json({
+    message: "Address deleted Successfully",
+    addresses: user.addresses,
+  });
+};
 
 module.exports = {
   registerController,
@@ -237,4 +292,5 @@ module.exports = {
   logOutController,
   getUserAddresses,
   addUserAddress,
+  deleteuserAddress,
 };
