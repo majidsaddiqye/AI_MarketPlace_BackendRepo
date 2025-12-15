@@ -206,7 +206,7 @@ const addUserAddress = async (req, res) => {
   const { street, city, state, zip, country, isDefault } = req.body;
 
   // update Adresses
-  const user = await User.findOneAndUpdate(
+  const user = await userModel.findOneAndUpdate(
     { _id: id },
     {
       $push: {

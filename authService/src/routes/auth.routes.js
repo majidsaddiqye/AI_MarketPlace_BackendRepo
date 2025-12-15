@@ -7,12 +7,13 @@ const {
   logOutController,
   getUserAddresses,
   addUserAddress,
+  deleteuserAddress,
 } = require("../controllers/auth.controller");
 const {
   registerUserValidation,
   loginUserValidation,
   addUserAdressValidation,
-  deleteuserAddress,
+ 
 } = require("../middlewares/validator.middleware");
 const { authMiddleware } = require("../middlewares/auth.middleware");
 
