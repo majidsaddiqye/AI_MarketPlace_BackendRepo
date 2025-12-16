@@ -15,11 +15,8 @@ try {
     }
 
     // Upload images if any
-    const images = []
-    if (req.files && req.files.length > 0) {
-        const files = await Promise.all((req.files || []).map(file => uploadImage({buffer:file.buffer})))
-        images.push(...files)
-    }
+    const images = await Promise.all((req.files || []).map(file => uploadImage({buffer:file.buffer})))
+    
 
     const product = await productModel.create({title,description,price,seller,images})
     
