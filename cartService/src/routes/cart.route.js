@@ -1,5 +1,5 @@
 const express = require("express");
-const { createCart, updateCart, getCart } = require("../controllers/cart.controller");
+const { createCart, updateCart, getCart, clearCart, removeCartItem } = require("../controllers/cart.controller");
 const { createAuthMiddleware } = require("../middlewares/auth.middleware");
 const {
   createCartValidation,
@@ -24,5 +24,15 @@ router.patch(
   createAuthMiddleware(["user"]),
   updateCartValidation,
   updateCart
+);
+router.delete(
+  "/items/:productId",
+  createAuthMiddleware(["user"]),
+  removeCartItem
+);
+router.delete(
+  "/",
+  createAuthMiddleware(["user"]),
+  clearCart
 );
 module.exports = router;
