@@ -1,5 +1,5 @@
 const express = require("express");
-const { createProduct, getproducts, getProductById , updateProduct} = require("../controllers/product.controller");
+const { createProduct, getproducts, getProductById , updateProduct, deleteProduct} = require("../controllers/product.controller");
 const multer = require("multer");
 const { createAuthMiddleware } = require("../middlewares/auth.middleware");
 const { createProductValidation } = require("../validators/product.validator");
@@ -19,5 +19,6 @@ router.post(
 router.get('/',getproducts)
 router.get('/:id',getProductById)
 router.patch('/:id',createAuthMiddleware(["seller"]),upload.array("images"),updateProduct)
+router.delete('/:id',createAuthMiddleware(["seller"]),deleteProduct)
 
 module.exports = router;

@@ -130,5 +130,45 @@ async function updateProduct(req, res) {
   });
 }
 
+//deleteProduct Controller
+async function deleteProduct(req, res) {
+  try {
+    const { id } = req.params;
 
-module.exports = { createProduct, getproducts, getProductById, updateProduct };
+    // Check if the product id is valid
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid product id" });
+    }
+
+    // Check if the product exists
+    const product = await productModel.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Check if user is admin or the product owner (seller)
+    const isOwner = product.seller.toString() === req.user.id.toString();
+
+    if (!isOwner) {
+      return res.status(403).json({
+        message: "You do not have permission to delete this product",
+      });
+    }
+
+    // Delete the product
+    await productModel.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      message: "Product deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+}
+
+
+module.exports = { createProduct, getproducts, getProductById, updateProduct, deleteProduct };
