@@ -1,7 +1,10 @@
 const express = require("express");
-const { createCart } = require("../controllers/cart.controller");
+const { createCart, updateCart } = require("../controllers/cart.controller");
 const { createAuthMiddleware } = require("../middlewares/auth.middleware");
-const { createCartValidation } = require("../validator/cart.validator");
+const {
+  createCartValidation,
+  updateCartValidation,
+} = require("../validator/cart.validator");
 
 const router = express.Router();
 
@@ -11,5 +14,10 @@ router.post(
   createCartValidation,
   createCart
 );
-
+router.patch(
+  "/items/:productId",
+  createAuthMiddleware(["user"]),
+  updateCartValidation,
+  updateCart
+);
 module.exports = router;

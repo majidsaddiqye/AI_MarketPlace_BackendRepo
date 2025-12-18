@@ -33,6 +33,17 @@ const createCartValidation = [
   handleValidationErrors,
 ];
 
+
+const updateCartValidation = [
+  body("quantity")
+    .notEmpty()
+    .withMessage("Quantity is required")
+    .isInt({ min: 1 })
+    .withMessage("Quantity must be at least 1"),
+  handleValidationErrors,
+];
+
+
 module.exports = {
-  createCartValidation,
+  createCartValidation, updateCartValidation 
 };
