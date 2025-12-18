@@ -170,5 +170,29 @@ async function deleteProduct(req, res) {
   }
 }
 
+//getSellerProducts Controller
+async function getSellerProducts(req, res) {
+  try {
+    const { skip = 0, limit = 20 } = req.query;
+    const sellerId = req.user.id;
 
-module.exports = { createProduct, getproducts, getProductById, updateProduct, deleteProduct };
+    const products = await productModel
+      .find({ seller: sellerId })
+      .skip(Number(skip))
+      .limit(Math.min(Number(limit), 20))
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      data: products,
+    });
+  } catch (error) {
+    console.error("Error fetching seller products:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+}
+
+
+module.exports = { createProduct, getproducts, getProductById, updateProduct, deleteProduct, getSellerProducts };
