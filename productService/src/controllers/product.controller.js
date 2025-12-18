@@ -73,4 +73,20 @@ async function getproducts(req, res) {
   });
 }
 
-module.exports = { createProduct, getproducts };
+//getProductById Controller
+async function getProductById(req, res) {
+  const { id } = req.params;
+  const product = await productModel.findById(id);
+
+  if (!product) {
+    return res.status(404).json({
+      message: "Product not found",
+    });
+  }
+
+  return res.status(200).json({
+    data: product,
+  });
+}
+
+module.exports = { createProduct, getproducts, getProductById };
