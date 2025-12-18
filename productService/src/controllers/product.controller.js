@@ -1,5 +1,6 @@
 const productModel = require("../models/product.model");
 const { uploadImage } = require("../services/imageKit.service");
+const mongoose = require("mongoose");
 
 // createProduct Controller
 async function createProduct(req, res) {
@@ -89,4 +90,45 @@ async function getProductById(req, res) {
   });
 }
 
-module.exports = { createProduct, getproducts, getProductById };
+//updateProduct Controller
+async function updateProduct(req, res) {
+  const { id } = req.params;
+  const body = req.body || {};
+
+  // Check if the product id is valid
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid product id" });
+  }
+
+  // Check if the product exists and is owned by the seller
+  const product = await productModel.findOne({ _id: id, seller: req.user.id });
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  // Update the product
+  if (body.title) product.title = body.title;
+  if (body.description) product.description = body.description;
+
+  // Update the price if it is provided
+  if (body.priceAmount || body.priceCurrency) {
+    product.price = {
+      amount: body.priceAmount
+        ? Number(body.priceAmount)
+        : product.price.amount,
+      currency: body.priceCurrency || product.price.currency,
+    };
+  }
+
+  // Save the product
+  const updatedProduct = await product.save();
+
+  // Return the updated product
+  return res.status(200).json({
+    message: "Product updated successfully",
+    data: updatedProduct,
+  });
+}
+
+
+module.exports = { createProduct, getproducts, getProductById, updateProduct };
