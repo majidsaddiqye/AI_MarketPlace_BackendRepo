@@ -318,4 +318,85 @@ async function cancelOrder(req, res) {
   }
 }
 
-module.exports = { createOrder, getOrderById, getMyOrders, cancelOrder };
+// updateOrderAddress Controller - Update shipping address of an order
+async function updateOrderAddress(req, res) {
+  const user = req.user;
+  const { id } = req.params;
+  const { shippingAddress } = req.body;
+
+  try {
+    // Validate order ID format
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid order ID",
+      });
+    }
+
+    // Validate shipping address
+    if (!shippingAddress) {
+      return res.status(400).json({
+        message: "Shipping address is required",
+      });
+    }
+
+    // Fetch order from database
+    const order = await orderModel.findById(id);
+
+    // Check if order exists
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+
+    // Check if user owns the order (users can only update their own orders)
+    if (order.user.toString() !== user.id) {
+      return res.status(403).json({
+        message: "Forbidden: You can only update your own orders",
+      });
+    }
+
+    // Check if order address can be updated
+    // Typically, only "pending" and "confirmed" orders can have their address updated
+    // Orders that are "shipped", "delivered", or "cancelled" cannot be updated
+    const updatableStatuses = ["pending", "confirmed"];
+    if (!updatableStatuses.includes(order.status)) {
+      return res.status(400).json({
+        message: `Order address cannot be updated. Current status: ${order.status}. Only orders with status "pending" or "confirmed" can have their address updated.`,
+      });
+    }
+
+    // Update shipping address
+    // Merge with existing address to allow partial updates
+    order.shippingAddress = {
+      ...order.shippingAddress,
+      ...shippingAddress,
+    };
+
+    const updatedOrder = await order.save();
+
+    // Return success response with updated order
+    return res.status(200).json({
+      message: "Order address updated successfully",
+      data: {
+        order: {
+          id: updatedOrder._id,
+          items: updatedOrder.items,
+          status: updatedOrder.status,
+          totalPrice: updatedOrder.totalPrice,
+          shippingAddress: updatedOrder.shippingAddress,
+          createdAt: updatedOrder.createdAt,
+          updatedAt: updatedOrder.updatedAt,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Update order address error:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+}
+
+module.exports = { createOrder, getOrderById, getMyOrders, cancelOrder, updateOrderAddress };
