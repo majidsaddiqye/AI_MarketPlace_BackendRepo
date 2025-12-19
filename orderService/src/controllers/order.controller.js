@@ -1,5 +1,6 @@
 const orderModel = require("../models/order.models");
 const axios = require("axios");
+const mongoose = require("mongoose");
 
 // createOrder Controller
 async function createOrder(req, res) {
@@ -126,4 +127,75 @@ async function createOrder(req, res) {
   }
 }
 
-module.exports = { createOrder };
+// getOrderById Controller
+async function getOrderById(req, res) {
+  const user = req.user;
+  const { id } = req.params;
+
+  try {
+    // Validate order ID format
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid order ID",
+      });
+    }
+
+    // Fetch order from database
+    const order = await orderModel.findById(id);
+
+    // Check if order exists
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+
+    // Check if user owns the order (users can only view their own orders)
+    if (order.user.toString() !== user.id) {
+      return res.status(403).json({
+        message: "Forbidden: You can only view your own orders",
+      });
+    }
+
+    
+
+    
+
+    // If order status is not pending, add the current status event
+    if (order.status !== "pending") {
+      const statusEvent = statusEvents[order.status];
+      if (statusEvent) {
+        timeline.push({
+          event: statusEvent.event,
+          status: order.status,
+          timestamp: order.updatedAt, // Using updatedAt as approximation for status change time
+          description: statusEvent.description,
+        });
+      }
+    }
+
+    // Return order with timeline and payment summary
+    return res.status(200).json({
+      message: "Order retrieved successfully",
+      data: {
+        order: {
+          id: order._id,
+          user: order.user,
+          items: order.items,
+          status: order.status,
+          shippingAddress: order.shippingAddress,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Get order by ID error:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+}
+
+module.exports = { createOrder, getOrderById };
