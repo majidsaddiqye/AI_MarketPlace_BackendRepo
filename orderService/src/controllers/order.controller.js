@@ -157,24 +157,7 @@ async function getOrderById(req, res) {
       });
     }
 
-    
-
-    
-
-    // If order status is not pending, add the current status event
-    if (order.status !== "pending") {
-      const statusEvent = statusEvents[order.status];
-      if (statusEvent) {
-        timeline.push({
-          event: statusEvent.event,
-          status: order.status,
-          timestamp: order.updatedAt, // Using updatedAt as approximation for status change time
-          description: statusEvent.description,
-        });
-      }
-    }
-
-    // Return order with timeline and payment summary
+    // Return order
     return res.status(200).json({
       message: "Order retrieved successfully",
       data: {
@@ -183,6 +166,7 @@ async function getOrderById(req, res) {
           user: order.user,
           items: order.items,
           status: order.status,
+          totalPrice: order.totalPrice,
           shippingAddress: order.shippingAddress,
           createdAt: order.createdAt,
           updatedAt: order.updatedAt,
@@ -198,4 +182,72 @@ async function getOrderById(req, res) {
   }
 }
 
-module.exports = { createOrder, getOrderById };
+// getMyOrders Controller - Get all orders for the authenticated user
+async function getMyOrders(req, res) {
+  const user = req.user;
+  const { status, page = 1, limit = 10 } = req.query;
+
+  try {
+    // Build query filter
+    const filter = { user: user.id };
+    
+    // Add status filter if provided
+    if (status) {
+      const validStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+      if (validStatuses.includes(status)) {
+        filter.status = status;
+      } else {
+        return res.status(400).json({
+          message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+        });
+      }
+    }
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const limitNum = parseInt(limit);
+
+    // Fetch orders with pagination
+    const orders = await orderModel
+      .find(filter)
+      .sort({ createdAt: -1 }) // Sort by newest first
+      .skip(skip)
+      .limit(limitNum);
+
+    // Get total count for pagination info
+    const totalOrders = await orderModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalOrders / limitNum);
+
+    // Return orders with pagination info
+    return res.status(200).json({
+      message: "Orders retrieved successfully",
+      data: {
+        orders: orders.map((order) => ({
+          id: order._id,
+          items: order.items,
+          status: order.status,
+          totalPrice: order.totalPrice,
+          shippingAddress: order.shippingAddress,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+        })),
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: totalPages,
+          totalOrders: totalOrders,
+          limit: limitNum,
+          hasNextPage: parseInt(page) < totalPages,
+          hasPrevPage: parseInt(page) > 1,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Get my orders error:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+}
+
+module.exports = { createOrder, getOrderById, getMyOrders };
