@@ -250,4 +250,72 @@ async function getMyOrders(req, res) {
   }
 }
 
-module.exports = { createOrder, getOrderById, getMyOrders };
+// cancelOrder Controller - Cancel an order by ID
+async function cancelOrder(req, res) {
+  const user = req.user;
+  const { id } = req.params;
+
+  try {
+    // Validate order ID format
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid order ID",
+      });
+    }
+
+    // Fetch order from database
+    const order = await orderModel.findById(id);
+
+    // Check if order exists
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+
+    // Check if user owns the order (users can only cancel their own orders)
+    if (order.user.toString() !== user.id) {
+      return res.status(403).json({
+        message: "Forbidden: You can only cancel your own orders",
+      });
+    }
+
+    // Check if order can be cancelled
+    // Typically, only "pending" and "confirmed" orders can be cancelled
+    // Orders that are "shipped", "delivered", or already "cancelled" cannot be cancelled
+    const cancellableStatuses = ["pending", "confirmed"];
+    if (!cancellableStatuses.includes(order.status)) {
+      return res.status(400).json({
+        message: `Order cannot be cancelled. Current status: ${order.status}. Only orders with status "pending" or "confirmed" can be cancelled.`,
+      });
+    }
+
+    // Update order status to cancelled
+    order.status = "cancelled";
+    const updatedOrder = await order.save();
+
+    // Return success response with updated order
+    return res.status(200).json({
+      message: "Order cancelled successfully",
+      data: {
+        order: {
+          id: updatedOrder._id,
+          items: updatedOrder.items,
+          status: updatedOrder.status,
+          totalPrice: updatedOrder.totalPrice,
+          shippingAddress: updatedOrder.shippingAddress,
+          createdAt: updatedOrder.createdAt,
+          updatedAt: updatedOrder.updatedAt,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Cancel order error:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+}
+
+module.exports = { createOrder, getOrderById, getMyOrders, cancelOrder };
