@@ -5,9 +5,9 @@ const { createOrder, getOrderById, getMyOrders, cancelOrder, updateOrderAddress 
 const router = express.Router();
 
 router.post("/", createAuthMiddleware(["user"]), createOrder);
-router.get("/me", createAuthMiddleware(["user"]), getMyOrders); // Must be before /:id to avoid route conflicts
-router.post("/:id/cancel", createAuthMiddleware(["user"]), cancelOrder); // Must be before /:id to avoid route conflicts
-router.patch("/:id/address", createAuthMiddleware(["user"]), updateOrderAddress); // Must be before /:id to avoid route conflicts
+router.get("/me", createAuthMiddleware(["user"]), getMyOrders); 
+router.post("/:id/cancel", createAuthMiddleware(["user"]), cancelOrder); 
+router.patch("/:id/address", createAuthMiddleware(["user"]), updateOrderAddress); 
 router.get("/:id", createAuthMiddleware(["user"]), getOrderById);
 
 module.exports = router;
