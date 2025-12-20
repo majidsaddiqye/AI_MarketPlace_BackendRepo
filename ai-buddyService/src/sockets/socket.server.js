@@ -5,6 +5,7 @@ const cookie = require("cookie");
 async function initSocketServer(httpServer) {
   const io = new Server(httpServer, {});
 
+  //verify token then connect
   io.use((socket, next) => {
     const cookies = socket.handshake.headers.cookie;
     const { token } = cookies ? cookie.parse(cookies) : {};
