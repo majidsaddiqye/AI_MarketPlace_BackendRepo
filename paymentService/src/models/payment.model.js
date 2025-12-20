@@ -25,6 +25,18 @@ const paymentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       required: true,
     },
+    price: {
+      amount: {
+        type: Number,
+        required: true,
+      },
+      currency: {
+        type: String,
+        required:true,
+        enum: ["PKR", "USD"],
+        default: "PKR",
+      },
+    },
   },
   { timestamps: true }
 );
