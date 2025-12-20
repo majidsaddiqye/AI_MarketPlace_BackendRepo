@@ -1,11 +1,11 @@
 const paymentModel = require("../models/payment.model");
-const jwt = require("jsonwebtoken");
 const axios = require("axios");
+const Razorpay = require("razorpay");
+const {
+    validatePaymentVerification,
+  } = require("../../node_modules/razorpay/dist/utils/razorpay-utils.js");
 
 //Razorpay Integration
-require("dotenv").config();
-const Razorpay = require("razorpay");
-
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -44,7 +44,7 @@ async function createPayment(req, res) {
       payment,
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(401).json({
       message: "Internal Server Error",
       error: error.message,
@@ -52,4 +52,51 @@ async function createPayment(req, res) {
   }
 }
 
-module.exports = { createPayment };
+//verifyPayment Controller
+async function verifyPayment(req, res) {
+  const {razorPayOrderId,paymentId,signature} =req.body
+  const secret  = process.env.RAZORPAY_KEY_SECRET
+  try {
+    const result = validatePaymentVerification(
+      { order_id: razorPayOrderId, payment_id: paymentId },
+      signature,
+      secret
+    );
+
+    if (!result) {
+      return res.status(401).json({
+        message: "Invalid Signature",
+      });
+    }
+
+    const payment = await paymentModel.findOne({
+      razorPayOrderId,
+      status: "PENDING",
+    });
+
+    if (!payment) {
+      return res.status(401).json({
+        message: "Payment not found",
+      });
+    }
+
+    payment.paymentId = paymentId;
+    payment.signature = signature;
+    payment.status = "COMPLETED";
+
+    await payment.save();
+
+    return res.status(201).json({
+      message: "Payment Verify Successfully",
+      payment,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+}
+
+module.exports = { createPayment, verifyPayment };
