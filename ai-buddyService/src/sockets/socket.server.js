@@ -1,14 +1,29 @@
-const {Server} = require('socket.io')
+const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
+const cookie = require("cookie");
 
-async function initSocketServer (httpServer){
+async function initSocketServer(httpServer) {
+  const io = new Server(httpServer, {});
 
-    const io = new Server(httpServer,{})
+  io.use((socket, next) => {
+    const cookies = socket.handshake.headers.cookie;
+    const { token } = cookies ? cookie.parse(cookies) : {};
+    if (!token) {
+      return next(new Error("Token Not Provided"));
+    }
 
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      socket.user = decoded;
+      next();
+    } catch (error) {
+      next(new Error("Invalid Token"));
+    }
+  });
 
-    io.on('connection',(socket)=>{
-        console.log("A User Connected")
-    })
+  io.on("connection", (socket) => {
+    console.log("A User Connected");
+  });
 }
 
-
-module.exports = {initSocketServer}
+module.exports = { initSocketServer };
