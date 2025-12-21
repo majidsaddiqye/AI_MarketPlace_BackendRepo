@@ -5,31 +5,38 @@ const {
   AIMessage,
   HumanMessage,
 } = require("@langchain/core/messages");
+const tools = require('../agent/tools')
 
 const model = new ChatGoogleGenerativeAI({
-  model: "gemini-2.0",
+  apiKey: "AIzaSyC2oncFwntc3FekuRLeQ2TTkER2dyG0DEM",
+  model: "gemini-2.0-flash"
+,
   temperature: 0.5,
 });
 
 const graph = new StateGraph(MessagesAnnotation)
   .addNode("tools", async (state, config) => {
     const lastMessage = state.messages[state.messages.length - 1];
-    const toolsCall = lastMessage.tool_calls;
+    const toolsCall = lastMessage.tool_calls || [];
 
-    const toolCallResults = await promise.all(
+    if (!toolsCall || toolsCall.length === 0) {
+      return state;
+    }
+
+    const toolCallResults = await Promise.all(
       toolsCall.map(async (call) => {
         const tool = tools[call.name];
         if (!tool) {
           throw new Error(`Tool ${call.name} not found`);
         }
 
-        const toolInput = call.args;
-        const toolResult = await tool.invoke({
+        const toolInput = call.args || {};
+        const toolResult = await tool.func({
           ...toolInput,
-          token: config.metadata.token,
+          token: config.metadata?.token,
         });
 
-        return new ToolMessage({ content: toolResult, toolName: call.name });
+        return new ToolMessage({ content: toolResult, name: call.name });
       })
     );
     state.messages.push(...toolCallResults);
@@ -40,8 +47,14 @@ const graph = new StateGraph(MessagesAnnotation)
       tools: [tools.searchProduct, tools.addProductToCart],
     });
 
+    // Handle both response.text and response.content
+    const content = response.content || response.text || "";
+    
     state.messages.push(
-      new AIMessage({ content: response.text, tool_calls: response.tool_calls })
+      new AIMessage({ 
+        content: content, 
+        tool_calls: response.tool_calls || undefined 
+      })
     );
     return state;
   })
