@@ -5,12 +5,11 @@ const {
   AIMessage,
   HumanMessage,
 } = require("@langchain/core/messages");
-const tools = require('../agent/tools')
+const tools = require("../agent/tools");
 
 const model = new ChatGoogleGenerativeAI({
-  apiKey: "AIzaSyC2oncFwntc3FekuRLeQ2TTkER2dyG0DEM",
-  model: "gemini-2.0-flash"
-,
+  apiKey: process.env.GEMINI_API_KEY,
+  model: "gemini-2.0-flash",
   temperature: 0.5,
 });
 
@@ -49,11 +48,11 @@ const graph = new StateGraph(MessagesAnnotation)
 
     // Handle both response.text and response.content
     const content = response.content || response.text || "";
-    
+
     state.messages.push(
-      new AIMessage({ 
-        content: content, 
-        tool_calls: response.tool_calls || undefined 
+      new AIMessage({
+        content: content,
+        tool_calls: response.tool_calls || undefined,
       })
     );
     return state;
