@@ -1,6 +1,7 @@
 const orderModel = require("../models/order.models");
 const axios = require("axios");
 const mongoose = require("mongoose");
+const { publishToQueue } = require("../broker/broker");
 
 // createOrder Controller
 async function createOrder(req, res) {
@@ -113,6 +114,7 @@ async function createOrder(req, res) {
       console.error("Failed to clear cart:", error.message);
     }
 
+    await publishToQueue("ORDER_SELLER_DASHBOARD.ORDER_CREATED", order)
     // Return success response
     return res.status(201).json({
       message: "Order created successfully",
