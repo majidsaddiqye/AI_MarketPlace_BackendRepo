@@ -1,7 +1,7 @@
 require('dotenv').config();
 const app = require('./src/app');
 const connectDB = require('./src/db/db')
-
+const { connect } = require('./src/broker/broker');
 
 
 
@@ -9,6 +9,7 @@ const connectDB = require('./src/db/db')
 
 // Execute ConnectDB Fnc
 connectDB()
+connect()
 
 // Server Listen on 3000
 app.listen(3000, () => {
