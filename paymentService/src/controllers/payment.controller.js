@@ -4,6 +4,7 @@ const Razorpay = require("razorpay");
 const {
     validatePaymentVerification,
   } = require("../../node_modules/razorpay/dist/utils/razorpay-utils.js");
+  const { publishToQueue } = require("../broker/broker.js")
 
 //Razorpay Integration
 const razorpay = new Razorpay({
@@ -38,6 +39,15 @@ async function createPayment(req, res) {
         currency: order.currency,
       },
     });
+
+    await publishToQueue("PAYMENT_SELLER_DASHBOARD.PAYMENT_CREATED", payment)
+    await publishToQueue("PAYMENT_NOTIFICATION.PAYMENT_INITIATED", {
+        email: req.user.email,
+        orderId: orderId,
+        amount: price.amount / 100,
+        currency: price.currency,
+        username: req.user.username,
+    })
 
     return res.status(200).json({
       message: "Payment initiated",
@@ -85,6 +95,20 @@ async function verifyPayment(req, res) {
     payment.status = "COMPLETED";
 
     await payment.save();
+
+    await publishToQueue("PAYMENT_NOTIFICATION.PAYMENT_COMPLETED",
+      {
+          email: req.user.email,
+          orderId: payment.order,
+          paymentId: payment.paymentId,
+          amount: payment.price.amount / 100,
+          currency: payment.price.currency,
+          fullName: req.user.fullName
+      }
+  )
+
+
+  await publishToQueue("PAYMENT_SELLER_DASHBOARD.PAYMENT_UPDATED", payment)
 
     return res.status(201).json({
       message: "Payment Verify Successfully",
